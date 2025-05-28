@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "lib": ["dom", "es6"],
+    "types": ["chrome"],
+    "allowJs": true,
+    "checkJs": true,
+    "jsx": "react", // optional, if you're using JSX
+    "module": "esnext",
+    "moduleResolution": "node"
+  },
+  "include": ["**/*.js"],
+  "exclude": ["node_modules"]
+}
+

@@ -1,0 +1,26 @@
+{
+    "name": "dpip-twich-chat-integration",
+    "version": "1.0.0",
+    "main": "content.js",
+    "scripts": {
+        "build": "rollup -c rollup.config.mjs",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [
+        "chrome",
+        "extension",
+        "twitch",
+        "api",
+        "chat"
+    ],
+    "author": "Hereugo",
+    "license": "ISC",
+    "description": "A chrome extension that allows you to interact with twitch chat while in picture in picture mode.",
+    "devDependencies": {
+        "@types/chrome": "^0.0.315",
+        "@types/tmi.js": "^1.8.6",
+        "@rollup/plugin-commonjs": "26.0.1",
+        "@rollup/plugin-node-resolve": "^15.2.3",
+        "rollup": "^4.22.4"
+    }
+}

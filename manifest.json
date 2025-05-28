@@ -1,0 +1,26 @@
+{
+    "name": "dpip twitch chat integration",
+    "description": "A chrome extension that allows you to interact with twitch chat while in picture in picture mode.",
+    "version": "1.0",
+    "manifest_version": 3,
+    "minimum_chrome_version": "116",
+    "background": {
+        "service_worker": "./dist/worker.js",
+        "type": "module"
+    },
+    "content_scripts": [
+        {
+            "matches": ["https://www.twitch.tv/*"],
+            "js": ["./dist/content.js"]
+        }
+    ],
+    "action": {
+        "default_icon": "icons/socket-inactive.png"
+    },
+    "permissions": ["identity", "storage"],
+    "host_permissions": [
+        "https://www.twitch.tv/",
+        "https://api.twitch.tv/",
+        "https://id.twitch.tv/oauth2/authorize/"
+    ]
+}
