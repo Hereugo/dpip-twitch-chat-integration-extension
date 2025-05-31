@@ -3,16 +3,32 @@ import {
     findLargestPlayingVideo,
 } from './utils-esm.js';
 import IRCMessage from './ircMessage.js';
+import { PIP_WINDOW_HTML } from './pipWindowHTML.js';
+
 /** @typedef {import('./types.js').CommandType} CommandType */
 /** @typedef {import('./types.js').Message} Message */
 
-class ContentInterface extends PublishSubscribeTemplate {
-    isChromeConnected = false;
-    isTwitchConnected = false;
+class PIPWindowManager extends PublishSubscribeTemplate {
+    mediaSession = navigator.mediaSession;
+
+    pipWindow = null;
+    videoElement = null;
+
+    options = {
+        width: 480,
+        height: 300,
+        preferInitialWindowPlacement: true,
+    };
+
+    /**
+     * Minimum px required for chat container to show
+     */
+    MIN_SPACE = 200;
 
     constructor() {
         super();
-        navigator.mediaSession.setActionHandler(
+
+        this.mediaSession.setActionHandler(
             'enterpictureinpicture',
             this.onEnterPIP.bind(this)
         );
@@ -22,15 +38,138 @@ class ContentInterface extends PublishSubscribeTemplate {
      *
      */
     async onEnterPIP() {
-        const videoElement = findLargestPlayingVideo();
-        if (!videoElement) {
+        this.videoElement = findLargestPlayingVideo();
+        if (!this.videoElement) {
             return;
         }
-        await videoElement.requestPictureInPicture();
+        this.originalParent = this.videoElement.parentNode;
 
-        videoElement.addEventListener('leavepictureinpicture', (e) =>
-            this.postChromeMessage('CFIN')
+        this.pipWindow = await documentPictureInPicture.requestWindow(
+            this.options
         );
+
+        this.pipWindow.document.body.insertAdjacentHTML(
+            'afterbegin',
+            PIP_WINDOW_HTML
+        );
+        this.wrapper = this.pipWindow.document.querySelector('.dpip__wrapper');
+        this.container =
+            this.pipWindow.document.getElementById('dpip__container');
+        this.chat = this.pipWindow.document.getElementById('dpip__chat');
+
+        this.wrapper.prepend(this.videoElement);
+
+        this.copyAllStyleSheets();
+
+        this.videoElement.addEventListener(
+            'loadedmetadata',
+            this.updateLayout.bind(this)
+        );
+        this.pipWindow.addEventListener('resize', this.updateLayout.bind(this));
+
+        this.emit('enterpictureinpicture');
+    }
+
+    /**
+     * Copies all style sheets from original document to pip window.
+     */
+    copyAllStyleSheets() {
+        // Copy all style sheets.
+        [...document.styleSheets].forEach((styleSheet) => {
+            try {
+                const cssRules = [...styleSheet.cssRules]
+                    .map((rule) => rule.cssText)
+                    .join('');
+                const style = document.createElement('style');
+
+                style.textContent = cssRules;
+                this.pipWindow.document.head.appendChild(style);
+            } catch (e) {
+                const link = document.createElement('link');
+
+                link.rel = 'stylesheet';
+                link.type = styleSheet.type;
+                link.media = styleSheet.media;
+                link.href = styleSheet.href;
+                this.pipWindow.document.head.appendChild(link);
+            }
+        });
+    }
+
+    updateLayout() {
+        const windowWidth = this.pipWindow.innerWidth;
+        const windowHeight = this.pipWindow.innerHeight;
+        const videoAspect =
+            this.videoElement.videoWidth / this.videoElement.videoHeight;
+
+        const windowAspect = windowWidth / windowHeight;
+
+        let videoWidth, videoHeight;
+
+        if (windowAspect > videoAspect) {
+            // Fit by height
+            videoHeight = windowHeight;
+            videoWidth = videoHeight * videoAspect;
+            this.wrapper.style.flexDirection = 'row';
+            const leftoverWidth = windowWidth - videoWidth;
+            if (leftoverWidth < this.MIN_SPACE) {
+                this.container.style.display = 'none';
+            } else {
+                this.container.style.display = 'flex';
+            }
+        } else {
+            // Fit by width
+            videoWidth = windowWidth;
+            videoHeight = videoWidth / videoAspect;
+            this.wrapper.style.flexDirection = 'column';
+            const leftoverHeight = windowHeight - videoHeight;
+            if (leftoverHeight < this.MIN_SPACE) {
+                this.container.style.display = 'none';
+            } else {
+                this.container.style.display = 'flex';
+            }
+        }
+    }
+
+    /**
+     *
+     * @param {IRCMessage} ircMessage
+     */
+    addMessage(ircMessage) {
+        const message = document.createElement('div');
+        message.className = 'dpip__message';
+        message.textContent = ircMessage.params[1];
+
+        this.chat.appendChild(message);
+
+        // Auto-scroll to the bottom
+        this.chat.scrollTop = this.chat.scrollHeight;
+    }
+}
+
+class ContentInterface extends PublishSubscribeTemplate {
+    isChromeConnected = false;
+    isTwitchConnected = false;
+    pipWindowManager = null;
+
+    constructor() {
+        super();
+        this.pipWindowManager = new PIPWindowManager();
+        this.pipWindowManager.subscribe(
+            'enterpictureinpicture',
+            this.onEnterPIP.bind(this)
+        );
+    }
+
+    /**
+     */
+    onEnterPIP() {
+        this.pipWindowManager.pipWindow.addEventListener('pagehide', (e) => {
+            this.postChromeMessage('CFIN');
+            this.pipWindowManager.originalParent.prepend(
+                this.pipWindowManager.videoElement
+            );
+        });
 
         this.connect();
     }
@@ -42,7 +181,7 @@ class ContentInterface extends PublishSubscribeTemplate {
         this.chromePort = chrome.runtime.connect({ name: 'content-client' });
 
         // Initial message that indicates that we've entered a picture in picture mode.
-        this.postChromeMessage('CSYN', { channel: 'littlegremliin' });
+        this.postChromeMessage('CSYN', { channel: 'vanorsigma' });
 
         this.chromePort.onMessage.addListener(this.onMessage.bind(this));
         this.chromePort.onDisconnect.addListener(this.onDisconnect.bind(this));
@@ -128,6 +267,8 @@ class ContentInterface extends PublishSubscribeTemplate {
 
         console.log('CONTENT ', message);
         console.log('CONTENT ', ircMessage);
+
+        this.pipWindowManager.addMessage(ircMessage);
     }
 
     /**
