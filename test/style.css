@@ -312,97 +312,61 @@
         --line-height-body: 1.5;
         --line-height-heading: 1.2;
         --base-rem-unit: 10;
-        --gradient-ambient-jiggle-star: linear-gradient(
-            #f195f9 0%,
-            #fafa19 100%
-        );
-        --gradient-ambient-cuddle-star: linear-gradient(
-            #fa1ed2 0%,
-            #fafa19 100%
-        );
-        --gradient-ambient-crash-star: linear-gradient(
-            #ff6905 0%,
-            #fafa19 100%
-        );
-        --gradient-ambient-pylon-star: linear-gradient(
-            #00fafa 0%,
-            #fafa19 100%
-        );
-        --gradient-ambient-junimo-star: linear-gradient(
-            #00fa04 0%,
-            #fafa19 100%
-        );
-        --gradient-ambient-pylon-ooze: linear-gradient(
-            #00fafa 0%,
-            #bfff00 100%
-        );
-        --gradient-ambient-cuddle-twitch-purple: linear-gradient(
-            #fa1ed2 0%,
-            #9147ff 100%
-        );
-        --gradient-ambient-cuddle-widow: linear-gradient(
-            #fa1ed2 0%,
-            #c0adff 100%
-        );
-        --gradient-ambient-pylon-jiggle: linear-gradient(
-            #00fafa 0%,
-            #f195f9 100%
-        );
-        --gradient-ambient-pylon-widow: linear-gradient(
-            #00fafa 0%,
-            #c0adff 100%
-        );
-        --gradient-ambient-pylon-twitch-purple: linear-gradient(
-            #00fafa 0%,
-            #9147ff 100%
-        );
-        --gradient-ambient-pylon-zero: linear-gradient(
-            #00fafa 0%,
-            #1f69ff 100%
-        );
-        --gradient-hyper-pink: linear-gradient(
-            #fafa19 0%,
-            #ff6905 33%,
-            #f195f9 67%,
-            #fa1ed2 100%
-        );
-        --gradient-hyper-green: linear-gradient(
-            #00fa04 4%,
-            #68edc1 27%,
-            #f0f0ff 50%,
-            #fafa19 75%,
-            #bfff00 100%
-        );
-        --gradient-hyper-blue: linear-gradient(
-            #1f69ff 0%,
-            #00fafa 32%,
-            #f0f0ff 64%,
-            #1f69ff 82%,
-            #00fafa 100%
-        );
-        --gradient-radial-pink: radial-gradient(
-            50% 50% at 50% 50%,
-            #fafa19 0%,
-            #ff6905 34%,
-            #f195f9 68%,
-            #fa1ed2 100%
-        );
-        --gradient-radial-green: radial-gradient(
-            50% 50% at 50% 50%,
-            #00fa04 0%,
-            #fafa19 25%,
-            #f0f0ff 50%,
-            #68edc1 75%,
-            #00fa04 100%
-        );
-        --gradient-radial-blue: radial-gradient(
-            50% 50% at 50% 50%,
-            #00fafa 0%,
-            #1f69ff 18%,
-            #f0f0ff 35%,
-            #00fafa 68%,
-            #1f69ff 100%
-        );
+        --gradient-ambient-jiggle-star: linear-gradient(#f195f9 0%,
+                #fafa19 100%);
+        --gradient-ambient-cuddle-star: linear-gradient(#fa1ed2 0%,
+                #fafa19 100%);
+        --gradient-ambient-crash-star: linear-gradient(#ff6905 0%,
+                #fafa19 100%);
+        --gradient-ambient-pylon-star: linear-gradient(#00fafa 0%,
+                #fafa19 100%);
+        --gradient-ambient-junimo-star: linear-gradient(#00fa04 0%,
+                #fafa19 100%);
+        --gradient-ambient-pylon-ooze: linear-gradient(#00fafa 0%,
+                #bfff00 100%);
+        --gradient-ambient-cuddle-twitch-purple: linear-gradient(#fa1ed2 0%,
+                #9147ff 100%);
+        --gradient-ambient-cuddle-widow: linear-gradient(#fa1ed2 0%,
+                #c0adff 100%);
+        --gradient-ambient-pylon-jiggle: linear-gradient(#00fafa 0%,
+                #f195f9 100%);
+        --gradient-ambient-pylon-widow: linear-gradient(#00fafa 0%,
+                #c0adff 100%);
+        --gradient-ambient-pylon-twitch-purple: linear-gradient(#00fafa 0%,
+                #9147ff 100%);
+        --gradient-ambient-pylon-zero: linear-gradient(#00fafa 0%,
+                #1f69ff 100%);
+        --gradient-hyper-pink: linear-gradient(#fafa19 0%,
+                #ff6905 33%,
+                #f195f9 67%,
+                #fa1ed2 100%);
+        --gradient-hyper-green: linear-gradient(#00fa04 4%,
+                #68edc1 27%,
+                #f0f0ff 50%,
+                #fafa19 75%,
+                #bfff00 100%);
+        --gradient-hyper-blue: linear-gradient(#1f69ff 0%,
+                #00fafa 32%,
+                #f0f0ff 64%,
+                #1f69ff 82%,
+                #00fafa 100%);
+        --gradient-radial-pink: radial-gradient(50% 50% at 50% 50%,
+                #fafa19 0%,
+                #ff6905 34%,
+                #f195f9 68%,
+                #fa1ed2 100%);
+        --gradient-radial-green: radial-gradient(50% 50% at 50% 50%,
+                #00fa04 0%,
+                #fafa19 25%,
+                #f0f0ff 50%,
+                #68edc1 75%,
+                #00fa04 100%);
+        --gradient-radial-blue: radial-gradient(50% 50% at 50% 50%,
+                #00fafa 0%,
+                #1f69ff 18%,
+                #f0f0ff 35%,
+                #00fafa 68%,
+                #1f69ff 100%);
         --grid-columns: 12;
         --grid-gutter-width: 1.5rem;
         --grid-gutter-width-lg: 2rem;
@@ -479,34 +443,18 @@
         --color-text-accessible-red: var(--color-red-11);
         --color-text-accessible-green: var(--color-green-11);
         --color-text-accessible-blue: var(--color-blue-11);
-        --color-background-button-primary-default: var(
-            --color-background-button-brand
-        );
-        --color-background-button-primary-hover: var(
-            --color-background-button-brand-hover
-        );
-        --color-background-button-primary-active: var(
-            --color-background-button-brand-active
-        );
+        --color-background-button-primary-default: var(--color-background-button-brand);
+        --color-background-button-primary-hover: var(--color-background-button-brand-hover);
+        --color-background-button-primary-active: var(--color-background-button-brand-active);
         --color-background-button-secondary-default: var(--color-opac-gd-1);
         --color-background-button-secondary-hover: var(--color-opac-gd-2);
         --color-background-button-secondary-active: var(--color-opac-gd-3);
         --color-background-button-text-default: var(--color-transparent);
-        --color-background-button-text-hover: var(
-            --color-background-interactable-hover
-        );
-        --color-background-button-text-active: var(
-            --color-background-interactable-active
-        );
-        --color-background-button-destructive-default: var(
-            --color-background-button-error
-        );
-        --color-background-button-destructive-hover: var(
-            --color-background-button-error-hover
-        );
-        --color-background-button-destructive-active: var(
-            --color-background-button-error-active
-        );
+        --color-background-button-text-hover: var(--color-background-interactable-hover);
+        --color-background-button-text-active: var(--color-background-interactable-active);
+        --color-background-button-destructive-default: var(--color-background-button-error);
+        --color-background-button-destructive-hover: var(--color-background-button-error-hover);
+        --color-background-button-destructive-active: var(--color-background-button-error-active);
         --color-background-button-error: var(--color-red-10);
         --color-background-button-error-hover: var(--color-red-12);
         --color-background-button-error-active: var(--color-red-14);
@@ -524,63 +472,25 @@
         --color-background-button-brand-active: var(--color-twitch-purple-7);
         --color-background-button-overlay-primary-default: var(--color-white);
         --color-background-button-overlay-primary-hover: var(--color-opac-w-14);
-        --color-background-button-overlay-primary-active: var(
-            --color-opac-w-13
-        );
-        --color-background-button-overlay-secondary-default: var(
-            --color-opac-w-3
-        );
-        --color-background-button-overlay-secondary-hover: var(
-            --color-background-interactable-overlay-hover
-        );
-        --color-background-button-overlay-secondary-active: var(
-            --color-background-interactable-overlay-active
-        );
-        --color-background-button-overlay-text-default: var(
-            --color-transparent
-        );
-        --color-background-button-overlay-text-hover: var(
-            --color-background-interactable-overlay-hover
-        );
-        --color-background-button-overlay-text-active: var(
-            --color-background-interactable-overlay-active
-        );
-        --color-background-button-overlay-error: var(
-            --color-background-button-error
-        );
-        --color-background-button-overlay-error-hover: var(
-            --color-background-button-error-hover
-        );
-        --color-background-button-overlay-error-active: var(
-            --color-background-button-error-active
-        );
-        --color-background-button-overlay-warn: var(
-            --color-background-button-warn
-        );
-        --color-background-button-overlay-warn-hover: var(
-            --color-background-button-warn-hover
-        );
-        --color-background-button-overlay-warn-active: var(
-            --color-background-button-warn-active
-        );
-        --color-background-button-overlay-success: var(
-            --color-background-button-success
-        );
-        --color-background-button-overlay-success-hover: var(
-            --color-background-button-success-hover
-        );
-        --color-background-button-overlay-success-active: var(
-            --color-background-button-success-active
-        );
-        --color-background-button-overlay-info: var(
-            --color-background-button-info
-        );
-        --color-background-button-overlay-info-hover: var(
-            --color-background-button-info-hover
-        );
-        --color-background-button-overlay-info-active: var(
-            --color-background-button-info-active
-        );
+        --color-background-button-overlay-primary-active: var(--color-opac-w-13);
+        --color-background-button-overlay-secondary-default: var(--color-opac-w-3);
+        --color-background-button-overlay-secondary-hover: var(--color-background-interactable-overlay-hover);
+        --color-background-button-overlay-secondary-active: var(--color-background-interactable-overlay-active);
+        --color-background-button-overlay-text-default: var(--color-transparent);
+        --color-background-button-overlay-text-hover: var(--color-background-interactable-overlay-hover);
+        --color-background-button-overlay-text-active: var(--color-background-interactable-overlay-active);
+        --color-background-button-overlay-error: var(--color-background-button-error);
+        --color-background-button-overlay-error-hover: var(--color-background-button-error-hover);
+        --color-background-button-overlay-error-active: var(--color-background-button-error-active);
+        --color-background-button-overlay-warn: var(--color-background-button-warn);
+        --color-background-button-overlay-warn-hover: var(--color-background-button-warn-hover);
+        --color-background-button-overlay-warn-active: var(--color-background-button-warn-active);
+        --color-background-button-overlay-success: var(--color-background-button-success);
+        --color-background-button-overlay-success-hover: var(--color-background-button-success-hover);
+        --color-background-button-overlay-success-active: var(--color-background-button-success-active);
+        --color-background-button-overlay-info: var(--color-background-button-info);
+        --color-background-button-overlay-info-hover: var(--color-background-button-info-hover);
+        --color-background-button-overlay-info-active: var(--color-background-button-info-active);
         --color-background-button-overlay-brand: var(--color-white);
         --color-background-button-overlay-brand-hover: var(--color-opac-w-14);
         --color-background-button-overlay-brand-active: var(--color-opac-w-13);
@@ -613,18 +523,10 @@
         --color-background-button-focus: var(--color-twitch-purple-8);
         --color-background-button-active: var(--color-twitch-purple-7);
         --color-background-button-purchase: var(--color-opac-b-5);
-        --color-background-button-status: var(
-            --color-background-button-success
-        );
-        --color-background-button-status-hover: var(
-            --color-background-button-error-hover
-        );
-        --color-background-button-status-focus: var(
-            --color-background-button-error-hover
-        );
-        --color-background-button-status-active: var(
-            --color-background-button-error-active
-        );
+        --color-background-button-status: var(--color-background-button-success);
+        --color-background-button-status-hover: var(--color-background-button-error-hover);
+        --color-background-button-status-focus: var(--color-background-button-error-hover);
+        --color-background-button-status-active: var(--color-background-button-error-active);
         --color-background-button-success-focus: var(--color-green-darker);
         --color-background-button-alert: var(--color-red);
         --color-background-button-alert-hover: var(--color-red-darker);
@@ -734,25 +636,15 @@
         --color-background-overlay-brand: var(--color-twitch-purple-11);
         --color-background-interactable-hover: var(--color-opac-gd-2);
         --color-background-interactable-active: var(--color-opac-gd-3);
-        --color-background-interactable-selected: var(
-            --color-background-button-brand
-        );
+        --color-background-interactable-selected: var(--color-background-button-brand);
         --color-background-interactable-overlay-hover: var(--color-opac-w-3);
         --color-background-interactable-overlay-active: var(--color-opac-w-4);
         --color-background-interactable-overlay-selected: var(--color-white);
-        --color-background-interactable-destructive-hover: var(
-            --color-red-darker
-        );
+        --color-background-interactable-destructive-hover: var(--color-red-darker);
         --color-background-interactable-destructive-active: var(--color-red);
-        --color-background-button-icon-overlay-default: var(
-            --color-transparent
-        );
-        --color-background-button-icon-overlay-hover: var(
-            --color-background-interactable-overlay-hover
-        );
-        --color-background-button-icon-overlay-active: var(
-            --color-background-interactable-overlay-active
-        );
+        --color-background-button-icon-overlay-default: var(--color-transparent);
+        --color-background-button-icon-overlay-hover: var(--color-background-interactable-overlay-hover);
+        --color-background-button-icon-overlay-active: var(--color-background-interactable-overlay-active);
         --color-background-image-selector-overlay: var(--color-transparent);
         --color-background-input: var(--color-background-base);
         --color-background-input-focus: var(--color-background-base);
@@ -760,16 +652,10 @@
         --color-background-input-overlay: var(--color-opac-b-6);
         --color-background-input-overlay-focus: var(--color-opac-b-6);
         --color-background-input-checkbox-checked: var(--color-border-brand);
-        --color-background-input-checkbox-checked-background: var(
-            --color-black
-        );
-        --color-background-input-checkbox-checked-background-overlay: var(
-            --color-black
-        );
+        --color-background-input-checkbox-checked-background: var(--color-black);
+        --color-background-input-checkbox-checked-background-overlay: var(--color-black);
         --color-background-input-checkbox-checked-overlay: var(--color-white);
-        --color-background-input-checkbox-checked-overlay-disabled: var(
-            --color-opac-w-10
-        );
+        --color-background-input-checkbox-checked-overlay-disabled: var(--color-opac-w-10);
         --color-background-keyboard-prompt: var(--color-opac-gd-1);
         --color-background-keyboard-prompt-tooltip: var(--color-opac-gl-1);
         --color-background-segmented-bar: var(--color-opac-gd-3);
@@ -777,27 +663,19 @@
         --color-background-segmented-bar-fill-overlay: var(--color-white);
         --color-background-segmented-button-overlay: var(--color-opac-w-2);
         --color-background-segmented-button-option-selected: var(--color-white);
-        --color-background-segmented-button-overlay-option-selected: var(
-            --color-white
-        );
+        --color-background-segmented-button-overlay-option-selected: var(--color-white);
         --color-background-selectable: var(--color-opac-gd-1);
         --color-background-selectable-hover: var(--color-opac-gd-2);
         --color-background-selectable-overlay: var(--color-opac-w-3);
         --color-background-selectable-overlay-hover: var(--color-opac-w-4);
         --color-background-tag-default: var(--color-opac-gd-1);
         --color-background-table-selected: var(--color-twitch-purple-5);
-        --color-background-tag-hover: var(
-            --color-background-interactable-hover
-        );
-        --color-background-tag-active: var(
-            --color-background-interactable-active
-        );
+        --color-background-tag-hover: var(--color-background-interactable-hover);
+        --color-background-tag-active: var(--color-background-interactable-active);
         --color-background-toggle: var(--color-transparent);
         --color-background-toggle-handle: var(--color-white);
         --color-background-toggle-handle-checked: var(--color-twitch-purple-10);
-        --color-background-toggle-handle-checked-disabled: var(
-            --color-border-toggle
-        );
+        --color-background-toggle-handle-checked-disabled: var(--color-border-toggle);
         --color-background-toggle-handle-overlay: var(--color-white);
         --color-background-toggle-hover: var(--color-opac-w-5);
         --color-background-toggle-focus: var(--color-opac-w-5);
@@ -812,14 +690,10 @@
         --color-background-progress-status-error: var(--color-border-error);
         --color-background-progress-status-caution: var(--color-border-warn);
         --color-background-progress-status-success: var(--color-border-success);
-        --color-background-progress-overlay-status: var(
-            --color-border-overlay-brand
-        );
+        --color-background-progress-overlay-status: var(--color-border-overlay-brand);
         --color-background-progress-overlay-mask: var(--color-opac-w-4);
         --color-background-progress-countdown: none;
-        --color-background-progress-countdown-status: var(
-            --color-twitch-purple-9
-        );
+        --color-background-progress-countdown-status: var(--color-twitch-purple-9);
         --color-background-pill: var(--color-hinted-grey-7);
         --color-background-pill-new: var(--color-magenta-11);
         --color-background-pill-subtle: var(--color-hinted-grey-10);
@@ -878,9 +752,7 @@
         --color-text-chat-line-mentioning: var(--color-white);
         --color-text-chat-line-mentioned: var(--color-hinted-grey-2);
         --color-text-channel-status-text-indicator-offline: var(--color-black);
-        --color-text-channel-status-text-indicator-offline-overlay: var(
-            --color-black
-        );
+        --color-text-channel-status-text-indicator-offline-overlay: var(--color-black);
         --color-text-ribbon: var(--color-white);
         --color-border-overlay: var(--color-opac-w-5);
         --color-border-overlay-focus: var(--color-white);
@@ -907,9 +779,7 @@
         --color-border-image-selector-overlay: var(--color-opac-w-6);
         --color-border-image-selector-overlay-selected: var(--color-white);
         --color-border-image-selector-mask: var(--color-twitch-purple-7);
-        --color-border-image-selector-mask-overlay: var(
-            --color-twitch-purple-7
-        );
+        --color-border-image-selector-mask-overlay: var(--color-twitch-purple-7);
         --color-border-input: var(--color-opac-gl-4);
         --color-border-input-hover: var(--color-opac-gl-4);
         --color-border-input-focus: var(--color-border-brand);
@@ -927,9 +797,7 @@
         --color-border-input-checkbox-overlay-focus: var(--color-white);
         --color-border-input-checkbox-hover-overlay: var(--color-white);
         --color-border-input-checkbox-checked-overlay: var(--color-white);
-        --color-border-input-checkbox-checked-overlay-disabled: var(
-            --color-opac-w-10
-        );
+        --color-border-input-checkbox-checked-overlay-disabled: var(--color-opac-w-10);
         --color-border-keyboard-prompt: var(--color-opac-gd-3);
         --color-border-keyboard-prompt-tooltip: var(--color-opac-gl-3);
         --color-border-range-handle: var(--color-border-brand);
@@ -1018,9 +886,7 @@
         --color-fill-button-icon-focus: var(--color-text-base);
         --color-fill-button-icon-active: var(--color-text-base);
         --color-fill-channel-status-text-indicator-offline: var(--color-white);
-        --color-fill-channel-status-text-indicator-offline-overlay: var(
-            --color-white
-        );
+        --color-fill-channel-status-text-indicator-offline-overlay: var(--color-white);
         --color-fill-new-item-indicator: var(--color-magenta-11);
         --color-fill-ribbon: var(--color-red-9);
         --color-social-twitter: var(--color-twitter);
@@ -1281,6 +1147,7 @@
     #dpip__sendbutton:hover {
         background: var(--color-background-button-brand-hover);
     }
+
     /* Message */
     .dpip__message {
         overflow-wrap: anywhere;

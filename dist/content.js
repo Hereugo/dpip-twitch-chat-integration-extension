@@ -407,11 +407,18 @@ class PIPWindowManager extends PublishSubscribeTemplate {
         const clone = template.content.cloneNode(true);
 
         clone.querySelector('.dpip__message_username').textContent =
-            ircMessage.prefix.nickname;
+            ircMessage.tags['display-name'];
         clone.querySelector('.dpip__message_body').textContent =
             ircMessage.params[1];
         clone.querySelector('.dpip__message_timestamp').textContent =
-            new Date().toLocaleTimeString();
+            new Date().toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+            });
+
+        clone.querySelector('.dpip__message_username').style.color =
+            ircMessage.tags['color'];
 
         this.chat.appendChild(clone);
 
@@ -422,13 +429,20 @@ class PIPWindowManager extends PublishSubscribeTemplate {
 const PIP_WINDOW_HTML = `
     <style>
         @media all and (display-mode: picture-in-picture) {
+            /* Reset and Base */
             * {
-                margin: 0px;
-                padding: 0px;
+                margin: 0;
+                padding: 0;
                 box-sizing: border-box;
             }
 
-            html,
+            html {
+                font-size: 62.5%;
+                font-weight: var(--font-weight-normal);
+                text-size-adjust: 100%;
+                line-height: var(--line-height-body);
+            }
+
             body {
                 margin: 0;
                 padding: 0;
@@ -441,6 +455,7 @@ const PIP_WINDOW_HTML = `
                 line-height: var(--line-height-body);
             }
 
+            /* Wrapper */
             .dpip__wrapper {
                 display: flex;
                 align-items: center;
@@ -455,54 +470,188 @@ const PIP_WINDOW_HTML = `
                 max-height: 100%;
                 width: auto;
                 height: auto;
-                object-fit: contain;
                 background: inherit;
                 flex-shrink: 0;
+                border: var(--border-width-default) solid var(--color-border-base);
+                border-radius: var(--border-radius-medium);
             }
 
+            /* Container */
             .dpip__container {
                 background: var(--color-background-body-alt);
                 color: inherit;
                 display: flex;
                 overflow: auto;
                 flex-grow: 1;
-
-                /* allows shrinking */
                 min-width: 0;
                 min-height: 0;
                 width: 100%;
                 height: 100%;
+                padding: var(--space-05);
+                border-left: var(--border-width-default) solid var(--color-border-base);
+                border-radius: var(--border-radius-small);
+                flex-direction: column;
             }
+
+            /* Chat */
             .dpip__chat {
                 flex: 1;
                 overflow-y: auto;
-                padding-bottom: 6rem;
+                display: flex;
+                flex-direction: column;
+                background: var(--color-background-chat);
+                color: var(--color-text-base);
+                scrollbar-width: thin;
+                scrollbar-color: var(--color-background-scrollbar) transparent;
+                border-radius: var(--border-radius-small) var(--border-radius-small) 0 0;
             }
+
+            .dpip__chat::-webkit-scrollbar {
+                width: 8px;
+                opacity: 0;
+                transition: opacity var(--timing-medium);
+            }
+
+            .dpip__chat:hover::-webkit-scrollbar {
+                opacity: 1;
+            }
+
+            .dpip__chat::-webkit-scrollbar-thumb {
+                background-color: var(--color-background-scrollbar);
+                border-radius: var(--border-radius-small);
+                border: 2px solid transparent;
+                background-clip: content-box;
+            }
+
+            .dpip__chat::-webkit-scrollbar-track {
+                background: transparent;
+            }
+
+            /* Input Section */
+            #dpip__input {
+                display: flex;
+                gap: var(--space-05);
+                padding: var(--space-1);
+                background: var(--color-background-input);
+                border-top: var(--border-width-default) solid var(--color-border-base);
+            }
+
+            #dpip__textinput {
+                flex-grow: 1;
+                resize: none;
+                padding: var(--button-padding-y) var(--button-padding-x);
+                background: var(--color-background-input);
+                border: var(--input-border-width-small) solid var(--color-border-input);
+                border-radius: var(--input-border-radius-small);
+                font-size: var(--input-text-small);
+                font-family: var(--font-size-7);
+                color: var(--color-text-input);
+                outline: none;
+                height: var(--input-size-default);
+                min-height: var(--input-size-default);
+                max-height: calc(var(--input-size-default) * 4);
+                overflow-y: auto;
+                line-height: var(--line-height-body);
+                transition: border-color var(--timing-medium);
+            }
+
+            #dpip__textinput:focus {
+                border-color: var(--color-border-input-focus);
+            }
+
+            #dpip__textinput::-webkit-scrollbar {
+                width: 6px;
+            }
+
+            #dpip__textinput::-webkit-scrollbar-thumb {
+                background-color: var(--color-background-scrollbar);
+                border-radius: var(--border-radius-small);
+            }
+
+            #dpip__textinput::-webkit-scrollbar-track {
+                background: transparent;
+            }
+
+            #dpip__sendbutton {
+                padding: var(--button-padding-y) var(--button-padding-x);
+                background: var(--color-background-button-brand);
+                color: var(--color-text-button-brand);
+                border: none;
+                border-radius: var(--button-border-radius-small);
+                font-size: var(--button-text-small);
+                font-family: var(--font-size-7);
+                font-weight: var(--font-weight-semibold);
+                cursor: pointer;
+                transition: background var(--timing-medium);
+                height: var(--button-size-default);
+                line-height: var(--button-size-small);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            #dpip__sendbutton:hover {
+                background: var(--color-background-button-brand-hover);
+            }
+            /* Message */
             .dpip__message {
                 overflow-wrap: anywhere;
-                padding: .5rem 2rem;
-                margin: 0;
-                font: inherit;
+                padding: var(--space-05);
+                font-size: var(--font-size-8);
                 vertical-align: baseline;
-                display: inline;
-                min-width: 0px;
+                display: inline-block;
+                min-width: 0;
+                border-radius: var(--border-radius-small);
+                transition: background var(--timing-medium);
+            }
+
+            .dpip__message:hover,
+            .dpip__message:focus {
+                background: var(--color-background-interactable-hover);
+            }
+
+            /* Timestamp */
+            .dpip__message_timestamp {
+                color: var(--color-hinted-grey-9);
+                margin-inline-end: var(--space-05);
+                font-size: var(--font-size-7);
+            }
+
+            /* Username */
+            .dpip__message_username {
+                font-weight: var(--font-weight-bold);
+                color: var(--color-text-link);
+                transition: color var(--timing-medium);
+            }
+
+            .dpip__message_username:hover,
+            .dpip__message_username:focus {
+                color: var(--color-text-link-hover);
+                text-decoration: underline;
+            }
+
+            /* Media Queries */
+            @media (max-width: var(--break-sm)) {
+                .dpip__wrapper {
+                    flex-direction: column;
+                }
             }
         }
     </style>
     <template id="dpip__message_template">
         <div class="dpip__message">
-            <span class="dpip__message_timestamp"></span>
-            <div class="dpip__message_username"></div>
-            <span aria-hidden>: </span>
-            <span class="dpip__message_body"></span>
+            <span class="dpip__message_timestamp"></span><span class="dpip__message_username"></span><span aria-hidden>:
+            </span><span class="dpip__message_body"></span>
         </div>
     </template>
     <div class="dpip__wrapper">
         <!-- Video goes here -->
-
         <div id="dpip__container" class="dpip__container">
             <!-- Your content here -->
-            <div id="dpip__chat" class="dpip__chat">
+            <div id="dpip__chat" class="dpip__chat"></div>
+            <div id="dpip__input" class="dpip__input">
+                <textarea id="dpip__textinput" placeholder="Send a message"></textarea>
+                <button id="dpip__sendbutton">Chat</button>
             </div>
         </div>
     </div>
@@ -554,7 +703,7 @@ class ContentInterface extends PublishSubscribeTemplate {
         this.chromePort = chrome.runtime.connect({ name: 'content-client' });
 
         // Initial message that indicates that we've entered a picture in picture mode.
-        this.postChromeMessage('CSYN', { channel: 'sphaerophoria' });
+        this.postChromeMessage('CSYN', { channel: 'breadward_' });
 
         this.chromePort.onMessage.addListener(this.onMessage.bind(this));
         this.chromePort.onDisconnect.addListener(this.onDisconnect.bind(this));

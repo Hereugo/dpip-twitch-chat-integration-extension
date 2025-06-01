@@ -108,15 +108,6 @@ navigator.mediaSession.setActionHandler(
         videoElement.addEventListener('loadedmetadata', updateLayout);
         pipWindow.addEventListener('resize', updateLayout);
 
-        // const textinput = pipWindow.document.getElementById('dpip__textinput');
-        //
-        // const lineHeight = parseFloat(getComputedStyle(textinput).lineHeight);
-        // const maxHeight = lineHeight * 4;
-        // textinput.addEventListener('input', function () {
-        //     this.style.height = 'auto'; // reset the height
-        //     this.style.height = Math.min(this.scrollHeight, maxHeight) + 'px';
-        // });
-
         function getRandomColor() {
             const letters = '0123456789ABCDEF';
             let color = '#';
