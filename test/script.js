@@ -66,11 +66,12 @@ navigator.mediaSession.setActionHandler(
 
         const MIN_SPACE = 200; // minimum px required for container to show
 
-        function updateLayout() {
-            const wrapper = pipWindow.document.querySelector('.wrapper');
-            const video = pipWindow.document.getElementById('video');
-            const container = pipWindow.document.getElementById('container');
+        const wrapper = pipWindow.document.querySelector('.dpip__wrapper');
+        const video = pipWindow.document.getElementById('video');
+        const container = pipWindow.document.getElementById('dpip__container');
+        const chat = pipWindow.document.getElementById('dpip__chat');
 
+        function updateLayout() {
             const windowWidth = pipWindow.innerWidth;
             const windowHeight = pipWindow.innerHeight;
             const videoAspect = video.videoWidth / video.videoHeight;
@@ -107,23 +108,49 @@ navigator.mediaSession.setActionHandler(
         videoElement.addEventListener('loadedmetadata', updateLayout);
         pipWindow.addEventListener('resize', updateLayout);
 
-        function addMessage(text) {
-            const chat = pipWindow.document.getElementById('chat');
-            const message = pipWindow.document.createElement('div');
-            message.className = 'message';
-            message.textContent = text;
+        // const textinput = pipWindow.document.getElementById('dpip__textinput');
+        //
+        // const lineHeight = parseFloat(getComputedStyle(textinput).lineHeight);
+        // const maxHeight = lineHeight * 4;
+        // textinput.addEventListener('input', function () {
+        //     this.style.height = 'auto'; // reset the height
+        //     this.style.height = Math.min(this.scrollHeight, maxHeight) + 'px';
+        // });
 
-            chat.appendChild(message);
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+        function addMessage(ircMessage) {
+            const template = document.getElementById('dpip__message_template');
+            const clone = template.content.cloneNode(true);
 
-            // Auto-scroll to the bottom
-            chat.scrollTop = chat.scrollHeight;
+            clone.querySelector('.dpip__message_username').textContent =
+                'Hereugo';
+            clone.querySelector('.dpip__message_body').textContent =
+                'Hello world this is a message from twitch chat!';
+            clone.querySelector('.dpip__message_timestamp').textContent =
+                new Date().toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false,
+                });
+
+            clone.querySelector('.dpip__message_username').style.color =
+                getRandomColor();
+
+            chat.appendChild(clone);
+
+            // chat.scrollTop = chat.scrollHeight;
         }
 
         // Simulate incoming messages
         setInterval(() => {
-            addMessage(
-                'New chat message at ' + new Date().toLocaleTimeString()
-            );
+            addMessage();
         }, 2000);
     }
 );

@@ -1,16 +1,29 @@
 <html>
-    <head>
-        <link rel="stylesheet" href="./style.css" />
-    </head>
 
-    <body>
-        <div class="wrapper">
-            <video id="video" src="video.mp4" autoplay loop controls></video>
-            <div id="container" class="container">
-                <!-- Your content here -->
-                <div id="chat" class="chat"></div>
+<head>
+    <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body>
+    <template id="dpip__message_template">
+        <div class="dpip__message">
+            <span class="dpip__message_timestamp"></span><span class="dpip__message_username"></span><span aria-hidden>:
+            </span><span class="dpip__message_body"></span>
+        </div>
+    </template>
+    <div class="dpip__wrapper">
+        <!-- Video goes here -->
+        <video id="video" src="video.mp4" autoplay loop controls></video>
+        <div id="dpip__container" class="dpip__container">
+            <!-- Your content here -->
+            <div id="dpip__chat" class="dpip__chat"></div>
+            <div id="dpip__input" class="dpip__input">
+                <textarea id="dpip__textinput" placeholder="Send a message"></textarea>
+                <button id="dpip__sendbutton">Chat</button>
             </div>
         </div>
-        <script src="./script.js"></script>
-    </body>
+    </div>
+    <script src="./script.js"></script>
+</body>
+
 </html>
