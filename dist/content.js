@@ -666,10 +666,67 @@ const PIP_WINDOW_HTML = `
     </div>
 `;
 
+class Logger {
+    constructor() {
+        this.logs = [];
+        this.colors = {
+            LOG: 'background: gray; color: white; padding: 2px 4px; border-radius: 4px;',
+            INFO: 'background: blue; color: white; padding: 2px 4px; border-radius: 4px;',
+            WARN: 'background: orange; color: white; padding: 2px 4px; border-radius: 4px;',
+            ERROR: 'background: red; color: white; padding: 2px 4px; border-radius: 4px;',
+        };
+    }
+
+    log(message) {
+        this._addLog('LOG', message);
+    }
+
+    info(message) {
+        this._addLog('INFO', message);
+    }
+
+    warn(message) {
+        this._addLog('WARN', message);
+    }
+
+    error(message) {
+        this._addLog('ERROR', message);
+    }
+
+    _addLog(type, message) {
+        const timestamp = new Date().toISOString();
+        const logEntry = { timestamp, type, message };
+        this.logs.push(logEntry);
+
+        const colorStyle =
+            this.colors[type] ||
+            'background: gray; color: white; padding: 2px 4px; border-radius: 4px;';
+        console.log(
+            `%c[${timestamp}] [%c${type}%c] ${message}`,
+            'color: inherit;',
+            colorStyle,
+            'color: inherit;'
+        );
+    }
+
+    getLogs(type = null) {
+        if (type) {
+            return this.logs.filter((log) => log.type === type.toUpperCase());
+        }
+        return this.logs;
+    }
+
+    clearLogs() {
+        this.logs = [];
+    }
+}
+
 /** @typedef {import('./types.js').CommandType} CommandType */
 /** @typedef {import('./types.js').Message} Message */
 
 class ContentInterface extends PublishSubscribeTemplate {
+    logger = new Logger();
+
     /**
      * flag for determining whether connection with content and worker is there.
      */
@@ -694,29 +751,37 @@ class ContentInterface extends PublishSubscribeTemplate {
     }
 
     onEnterPIP() {
-        // make sure to return original video element back to it's place.
         this.pipWindowManager.pipWindow.addEventListener('pagehide', (e) => {
-            this.postChromeMessage('CFIN');
+            this.logger.info(
+                `Closing PIP Window, closing connection with worker and twitch`
+            );
+            this.postChromeMessage('TFIN');
+
+            // make sure to return original video element back to it's place.
             this.pipWindowManager.originalParent.prepend(
                 this.pipWindowManager.videoElement
             );
         });
 
+        this.logger.info(`Entering picture in picture mode`);
         this.connect();
     }
 
     connect() {
-        console.log('CONTENT: ', 'Connecting to worker');
+        this.logger.info('Connecting to worker');
 
-        this.isChromeConnected = true;
         this.chromePort = chrome.runtime.connect({ name: 'content-client' });
-
-        // Initial message that indicates that we've entered a picture in picture mode.
-        let channelName = window.location.pathname.replace(/^\/|\/$/g, '');
-        this.postChromeMessage('CSYN', { channel: channelName });
 
         this.chromePort.onMessage.addListener(this.onMessage.bind(this));
         this.chromePort.onDisconnect.addListener(this.onDisconnect.bind(this));
+
+        // Initial message that indicates that we've entered a picture in picture mode.
+        let channelName = window.location.pathname.replace(/^\/|\/$/g, '');
+        this.logger.info(
+            `Sending Chrome SYN to connect twitch channel ${channelName}`
+        );
+
+        this.postChromeMessage('CSYN', { channel: channelName });
     }
 
     /**
@@ -725,7 +790,6 @@ class ContentInterface extends PublishSubscribeTemplate {
      * @param {Object} payload [description]
      */
     postChromeMessage(command, payload = {}) {
-        console.assert(this.isChromeConnected === true);
         this.chromePort.postMessage({
             command: command,
             payload: payload,
@@ -740,7 +804,11 @@ class ContentInterface extends PublishSubscribeTemplate {
         this.isChromeConnected = false;
 
         if (chrome.runtime.lastError) {
-            console.error(chrome.runtime.lastError.message);
+            this.logger.error(
+                `Chrome port disconnected due to error: ${chrome.runtime.lastError.message}`
+            );
+        } else {
+            this.logger.info('Chrome port disconnected');
         }
     }
 
@@ -749,7 +817,8 @@ class ContentInterface extends PublishSubscribeTemplate {
      * @param {Message} message [received message from worker]
      */
     onMessage(message) {
-        console.log('CONTENT: ', message);
+        this.logger.log(`Received command: ${message.command}`);
+
         this.emit(message.command, message);
         switch (message.command) {
             case 'CACK':
@@ -765,7 +834,7 @@ class ContentInterface extends PublishSubscribeTemplate {
             case 'TERR':
                 break;
             default: {
-                console.error('Unknown command: ' + message.command, message);
+                this.logger.error(`Unknown command: ${message.command}`);
                 break;
             }
         }
@@ -773,46 +842,60 @@ class ContentInterface extends PublishSubscribeTemplate {
 
     /**
      * handle IRC message
-     * @param {Message} message [received message after SYN]
+     * @param {Message} message [description]
      */
     handleTCON(message) {
         this.isTwitchConnected = true;
-        console.log('CONTENT ', 'Twitch connection has been established');
+        this.logger.info('Twitch connected!');
     }
 
     /**
      * handle IRC message
-     * @param {Message} message [received message after SYN]
+     * @param {Message} message [description]
      */
     handleTFIN(message) {
         this.isTwitchConnected = false;
-        console.log('CONTENT ', 'Twitch connection was stopped');
+        this.logger.info('Twitch disconnected');
+
+        // addtionally close chrome port
+        this.postChromeMessage('CFIN');
     }
 
     /**
      * handle IRC message
-     * @param {Message} message [received message after SYN]
+     * @param {Message} message [description]
      */
     handleTIRC(message) {
+        console.assert(
+            this.isTwitchConnected === true,
+            'received a IRC message but isTwitchConnected is set to false'
+        );
+
         const ircMessage = IRCMessage.fromJSON(message.payload);
 
+        this.logger.info('Adding a new message to PIP Window');
         this.pipWindowManager.addMessage(ircMessage);
     }
 
     /**
      * handle CACK message response
-     * @param {Message} message [received message after SYN]
+     * @param {Message} message [description]
      */
-    handleCACK(message) {}
+    handleCACK(message) {
+        this.isChromeConnected = true;
+        this.logger.info('Chrome port connected!');
+        this.logger.log('Worker is establishing twitch connection now');
+    }
 
     /**
      * handle CFIN message response
-     * @param {Message} message [received message after SYN]
+     * @param {Message} message [description]
      */
     handleCFIN(message) {
-        this.isChromeConnected = false;
         this.chromePort.disconnect();
-        console.log('CONTENT ', 'chrome port disconnected');
+        // this should have been called by disconnect() method on chromePort,
+        // but it doesn't get called therefore I'll do this.
+        this.onDisconnect(null);
     }
 }
 

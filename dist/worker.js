@@ -255,6 +255,61 @@ class IRCMessage {
     }
 }
 
+class Logger {
+    constructor() {
+        this.logs = [];
+        this.colors = {
+            LOG: 'background: gray; color: white; padding: 2px 4px; border-radius: 4px;',
+            INFO: 'background: blue; color: white; padding: 2px 4px; border-radius: 4px;',
+            WARN: 'background: orange; color: white; padding: 2px 4px; border-radius: 4px;',
+            ERROR: 'background: red; color: white; padding: 2px 4px; border-radius: 4px;',
+        };
+    }
+
+    log(message) {
+        this._addLog('LOG', message);
+    }
+
+    info(message) {
+        this._addLog('INFO', message);
+    }
+
+    warn(message) {
+        this._addLog('WARN', message);
+    }
+
+    error(message) {
+        this._addLog('ERROR', message);
+    }
+
+    _addLog(type, message) {
+        const timestamp = new Date().toISOString();
+        const logEntry = { timestamp, type, message };
+        this.logs.push(logEntry);
+
+        const colorStyle =
+            this.colors[type] ||
+            'background: gray; color: white; padding: 2px 4px; border-radius: 4px;';
+        console.log(
+            `%c[${timestamp}] [%c${type}%c] ${message}`,
+            'color: inherit;',
+            colorStyle,
+            'color: inherit;'
+        );
+    }
+
+    getLogs(type = null) {
+        if (type) {
+            return this.logs.filter((log) => log.type === type.toUpperCase());
+        }
+        return this.logs;
+    }
+
+    clearLogs() {
+        this.logs = [];
+    }
+}
+
 /** @typedef {import('./types.js').CommandType} CommandType */
 /** @typedef {import('./types.js').Message} Message */
 
@@ -271,6 +326,8 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
     isChromeConnected = false;
     isTwitchConnected = false;
 
+    logger = new Logger();
+
     constructor() {
         super();
 
@@ -281,13 +338,28 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
      * @param {chrome.runtime.Port} port [description]
      */
     onChromeConnect(port) {
-        console.log('worker connected to content ' + port.name);
-        this.isChromeConnected = true;
+        console.assert(
+            port.name === 'content-client',
+            `expected "client-content" port name but received "${port.name}"`
+        );
 
         // only one connection per chrome client is allowed for this extension to work
-        console.assert(this.chromePort === null);
-        this.chromePort = port;
+        if (this.isChromeConnected || this.chromePort !== null) {
+            this.logger.warn(
+                'Only one connection per chrome client is allowed, disconnecting from previous'
+            );
+            this.chromePort.disconnect();
 
+            // but it doesn't get called therefore I'll do this.
+            this.onChromeDisconnect(null);
+        }
+
+        console.assert(
+            !this.isChromeConnected && this.chromePort === null,
+            'chrome port should be empty but is still connected to someone.'
+        );
+
+        this.chromePort = port;
         this.chromePort.onMessage.addListener(this.onChromeMessage.bind(this));
         this.chromePort.onDisconnect.addListener(
             this.onChromeDisconnect.bind(this)
@@ -302,7 +374,11 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
         this.chromePort = null;
 
         if (chrome.runtime.lastError) {
-            console.error(chrome.runtime.lastError.message);
+            this.logger.error(
+                `Chrome port disconnected due to error: ${chrome.runtime.lastError.message}`
+            );
+        } else {
+            this.logger.info('Chrome port disconnected');
         }
     }
 
@@ -310,7 +386,7 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
      * @param {Message} message
      */
     onChromeMessage(message) {
-        console.log('CHROME MESSAGE: ', message);
+        this.logger.log(`Received chrome command: ${message.command}`);
 
         this.emit(message.command);
         switch (message.command) {
@@ -318,6 +394,8 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
                 return this.handleChromeCSYN(message);
             case 'CFIN':
                 return this.handleChromeCFIN(message);
+            case 'TFIN':
+                return this.handleTFIN(message);
         }
     }
 
@@ -326,7 +404,6 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
      * @param {Object} payload [description]
      */
     async postChromeMessage(command, payload) {
-        console.assert(this.isChromeConnected === true);
         this.chromePort.postMessage({
             command: command,
             payload: payload,
@@ -338,13 +415,19 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
      */
     handleChromeCSYN(message) {
         console.assert(
-            this.socket === null || this.socket.readyState === WebSocket.CLOSED
+            this.socket === null || this.socket.readyState === WebSocket.CLOSED,
+            'Expected socket to twitch to be empty, but something is still open'
         );
 
+        this.isChromeConnected = true;
+        this.logger.info('Chrome port connected!');
+
+        // TODO: this should be somehow better handled
         this.channel = message.payload.channel;
 
         // subscribe to an event when connection with twitch has been successfully established
         // TODO: I believe there should be an event for state when connection was wrong
+        this.logger.info(`Connecting to twitch channel ${this.channel}`);
         this.subscribe(
             'GLOBALUSERSTATE',
             this.twitchConnectedCallback.bind(this),
@@ -363,19 +446,35 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
      * @param{Message} message
      */
     handleChromeCFIN(message) {
+        this.postChromeMessage('CFIN');
+    }
+
+    /**
+     * [handle closing socket session when chrome client has closed pip view]
+     *
+     * @param{Message} message
+     */
+    handleTFIN(message) {
         console.assert(
-            this.socket != null && this.socket.readyState === WebSocket.OPEN
+            this.socket != null && this.socket.readyState === WebSocket.OPEN,
+            'Expected socket to be open, but the socket is either not there or already closed'
         );
 
-        this.closeTwitch();
+        this.part();
 
-        this.postChromeMessage('CFIN');
+        this.socket.close();
     }
 
     /**
      * Establish a connection between service worker and Twitch IRC
      */
     connectTwitch() {
+        this.logger.info('Setup socket connection with twitch');
+
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+            this.socket.close();
+        }
+
         this.socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
         this.socket.addEventListener('open', this.onSocketOpen.bind(this));
         this.socket.addEventListener('close', this.onSocketClose.bind(this));
@@ -390,12 +489,13 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
      * @param {IRCMessage} ircMessage [description]
      */
     twitchConnectedCallback(ircMessage) {
-        console.log('Successfully connected to twich with client ', ircMessage);
-
         this.isTwitchConnected = true;
+        this.logger.info('Twitch connected!');
+
         this.postChromeMessage('TCON');
 
         // Forward all chat messages to chrome client
+        this.logger.info('Starting to forward all PRIVMSG to chrome client');
         this.subscribe('PRIVMSG', (irc) =>
             this.postChromeMessage('TIRC', irc.toJSON())
         );
@@ -403,17 +503,9 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
         this.join();
     }
 
-    /**
-     * Close connection between service worker and Twitch IRC
-     */
-    closeTwitch() {
-        this.isTwitchConnected = false;
-        this.socket.close();
-
-        this.postChromeMessage('TFIN');
-    }
-
     oauth() {
+        this.logger.info('Setting up 2oath page');
+
         let authUrl = new URL('https://id.twitch.tv/oauth2/authorize');
         const state = crypto.randomUUID();
 
@@ -446,7 +538,13 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
     /**
      * @param {CloseEvent} e [description]
      */
-    onSocketClose(e) {}
+    onSocketClose(e) {
+        this.isTwitchConnected = false;
+        this.logger.info('Twitch disconnected');
+        this.socket = null;
+
+        this.postChromeMessage('TFIN');
+    }
 
     /**
      * @param {Event} e [description]
@@ -470,8 +568,8 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
             await chrome.storage.local.remove('oauth_state');
 
             if (!oauth_state || oauth_state !== state) {
-                console.warn('Stored state:', oauth_state);
-                console.warn('Returned state:', state);
+                this.logger.warn(`Stored state: ${oauth_state}`);
+                this.logger.warn(`Returned state: ${state}`);
                 throw new Error(
                     'Security Error: Invalid state parameter. Possible CSRF attack.'
                 );
@@ -500,11 +598,6 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
      * @param {string} message [Send a IRC message to twitch]
      */
     send(message) {
-        console.assert(
-            this.socket != null &&
-                this.socket.readyState === WebSocket.OPEN &&
-                this.isTwitchConnected === true
-        );
         this.socket.send(message);
     }
 
@@ -512,7 +605,8 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
      * @param {IRCMessage} ircMessage
      */
     onIRCMessage(ircMessage) {
-        console.log('TWITCH: ', ircMessage);
+        this.logger.info(`Received ircMessage command: ${ircMessage.command}`);
+
         this.emit(ircMessage.command, ircMessage);
         switch (ircMessage.command) {
             case 'PING':
@@ -537,7 +631,7 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
     async handleNOTICE(ircMessage) {
         const msgId = ircMessage.tags['msg-id'];
         if (msgId !== null) {
-            console.error('Error: ' + msgId, ircMessage.params[1]);
+            this.logger.error(`Error: ${msgId}, ${ircMessage.params[1]}`);
             this.postChromeMessage('TERR', {
                 reason: msgId,
                 description: ircMessage.params[1],
@@ -551,7 +645,13 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
     handleRECONNECT(ircMessage) {}
 
     join() {
+        this.logger.info(`Joining channel: ${this.channel}`);
         this.send(`JOIN #${this.channel}`);
+    }
+
+    part() {
+        this.logger.info(`Leaving channel: ${this.channel}`);
+        this.send(`PART #${this.channel}`);
     }
 }
 
