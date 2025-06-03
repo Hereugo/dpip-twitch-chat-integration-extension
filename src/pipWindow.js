@@ -34,6 +34,11 @@ export class PIPWindowManager extends PublishSubscribeTemplate {
         if (!this.videoElement) {
             return;
         }
+
+        // For some reason this resolve the issue of random video resizing
+        this.videoElement.playsInline = false;
+        this.videoElement.webkitPlaysInline = false; // This is a property on some WebKit browsers
+
         this.originalParent = this.videoElement.parentNode;
 
         this.pipWindow = await documentPictureInPicture.requestWindow(

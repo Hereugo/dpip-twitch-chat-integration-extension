@@ -48,7 +48,8 @@ class ContentInterface extends PublishSubscribeTemplate {
         this.chromePort = chrome.runtime.connect({ name: 'content-client' });
 
         // Initial message that indicates that we've entered a picture in picture mode.
-        this.postChromeMessage('CSYN', { channel: 'breadward_' });
+        let channelName = window.location.pathname.replace(/^\/|\/$/g, '');
+        this.postChromeMessage('CSYN', { channel: channelName });
 
         this.chromePort.onMessage.addListener(this.onMessage.bind(this));
         this.chromePort.onDisconnect.addListener(this.onDisconnect.bind(this));
