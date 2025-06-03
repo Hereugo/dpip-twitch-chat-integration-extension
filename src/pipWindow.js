@@ -35,10 +35,6 @@ export class PIPWindowManager extends PublishSubscribeTemplate {
             return;
         }
 
-        // For some reason this resolve the issue of random video resizing
-        this.videoElement.playsInline = false;
-        this.videoElement.webkitPlaysInline = false; // This is a property on some WebKit browsers
-
         this.originalParent = this.videoElement.parentNode;
 
         this.pipWindow = await documentPictureInPicture.requestWindow(
@@ -54,7 +50,9 @@ export class PIPWindowManager extends PublishSubscribeTemplate {
             this.pipWindow.document.getElementById('dpip__container');
         this.chat = this.pipWindow.document.getElementById('dpip__chat');
 
-        this.wrapper.prepend(this.videoElement);
+        this.wrapper
+            .querySelector('.dpip__video_container')
+            .prepend(this.videoElement);
 
         this.copyAllStylesheets();
 
@@ -197,11 +195,16 @@ const PIP_WINDOW_HTML = `
                 flex-direction: row;
             }
 
-            .dpip__wrapper video {
+            .dpip__video_container {
+                aspect-ratio: 16 / 9;
                 max-width: 100%;
                 max-height: 100%;
-                width: auto;
-                height: auto;
+                width: 100%;
+            }
+
+            .dpip__video_container video {
+                width: 100%;
+                height: 100%;
                 background: inherit;
                 flex-shrink: 0;
                 border: var(--border-width-default) solid var(--color-border-base);
@@ -378,6 +381,7 @@ const PIP_WINDOW_HTML = `
     </template>
     <div class="dpip__wrapper">
         <!-- Video goes here -->
+        <div id="dpip__video_container" class="dpip__video_container"></div>
         <div id="dpip__container" class="dpip__container">
             <!-- Your content here -->
             <div id="dpip__chat" class="dpip__chat"></div>
