@@ -414,10 +414,10 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
      * @param {Message} message
      */
     handleChromeCSYN(message) {
-        console.assert(
-            this.socket === null || this.socket.readyState === WebSocket.CLOSED,
-            'Expected socket to twitch to be empty, but something is still open'
-        );
+        // console.assert(
+        //     this.socket === null || this.socket.readyState === WebSocket.CLOSED,
+        //     'Expected socket to twitch to be empty, but something is still open'
+        // );
 
         this.isChromeConnected = true;
         this.logger.info('Chrome port connected!');
@@ -428,14 +428,20 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
         // subscribe to an event when connection with twitch has been successfully established
         // TODO: I believe there should be an event for state when connection was wrong
         this.logger.info(`Connecting to twitch channel ${this.channel}`);
-        this.subscribe(
-            'GLOBALUSERSTATE',
-            this.twitchConnectedCallback.bind(this),
-            {
-                once: true,
-            }
-        );
-        this.connectTwitch();
+
+        if (!this.isTwitchConnected) {
+            this.subscribe(
+                'GLOBALUSERSTATE',
+                this.twitchConnectedCallback.bind(this),
+                {
+                    once: true,
+                }
+            );
+            this.connectTwitch();
+        } else {
+            this.postChromeMessage('TCON');
+            this.join();
+        }
 
         this.postChromeMessage('CACK');
     }
@@ -462,7 +468,8 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
 
         this.part();
 
-        this.socket.close();
+        // this.socket.close();
+        this.postChromeMessage('TFIN');
     }
 
     /**

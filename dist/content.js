@@ -778,7 +778,7 @@ class ContentInterface extends PublishSubscribeTemplate {
         // Initial message that indicates that we've entered a picture in picture mode.
         let channelName = window.location.pathname.replace(/^\/|\/$/g, '');
         this.logger.info(
-            `Sending Chrome SYN to connect twitch channel ${channelName}`
+            `Sending Chrome SYN to connect to twitch channel: ${channelName}`
         );
 
         this.postChromeMessage('CSYN', { channel: channelName });
