@@ -11,27 +11,34 @@
  * const params = getHashParams("#access_token=abc&state=xyz");
  * const token = params.get("access_token"); // "abc"
  */
-export function getHashParams(hash) {
+export function getHashParams(hash: string): URLSearchParams {
     return new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : hash);
 }
 
-export function findLargestPlayingVideo() {
-    const videos = Array.from(document.querySelectorAll('video'))
-        .filter((video) => video.readyState != 0)
-        .filter((video) => video.disablePictureInPicture == false)
+export function findLargestPlayingVideo(): HTMLVideoElement | undefined {
+    const videos = (
+        Array.from(document.querySelectorAll('video')) as HTMLVideoElement[]
+    )
+        .filter((video) => video.readyState !== 0)
+        // Non-standard property on some browsers; guard via any-cast
+        .filter((video) => (video as any).disablePictureInPicture === false)
         .sort((v1, v2) => {
-            const v1Rect = v1.getClientRects()[0] || {
-                width: 0,
-                height: 0,
-            };
-            const v2Rect = v2.getClientRects()[0] || {
-                width: 0,
-                height: 0,
-            };
+            const v1Rect =
+                v1.getClientRects()[0] ||
+                ({
+                    width: 0,
+                    height: 0,
+                } as DOMRect);
+            const v2Rect =
+                v2.getClientRects()[0] ||
+                ({
+                    width: 0,
+                    height: 0,
+                } as DOMRect);
             return v2Rect.width * v2Rect.height - v1Rect.width * v1Rect.height;
         });
     if (videos.length === 0) {
-        return;
+        return undefined;
     }
     return videos[0];
 }
@@ -42,9 +49,11 @@ export function findLargestPlayingVideo() {
 export class PublishSubscribeTemplate {
     /**
      * Maps event names to arrays of subscriber objects.
-     * @type {Object<string, Array<{ callback: Function, once: boolean }>>}
      */
-    subscribers = {};
+    private subscribers: Record<
+        string,
+        Array<{ callback: (data: any) => void; once: boolean }>
+    > = {};
 
     /**
      * Subscribes a callback function to a specific event.
@@ -54,7 +63,11 @@ export class PublishSubscribeTemplate {
      * @param {Object} [options={}] - Optional settings for the subscription.
      * @param {boolean} [options.once=false] - Whether the callback should be triggered only once.
      */
-    subscribe(event, callback, options = {}) {
+    subscribe(
+        event: string,
+        callback: (data: any) => void,
+        options: { once?: boolean } = {}
+    ): void {
         const { once = false } = options;
 
         if (!this.subscribers[event]) {
@@ -70,7 +83,7 @@ export class PublishSubscribeTemplate {
      * @param {string} event - The name of the event to unsubscribe from.
      * @param {Function} callback - The callback function to remove from the list of subscribers.
      */
-    unsubscribe(event, callback) {
+    unsubscribe(event: string, callback: (data: any) => void): void {
         if (!this.subscribers[event]) return;
 
         this.subscribers[event] = this.subscribers[event].filter(
@@ -85,7 +98,7 @@ export class PublishSubscribeTemplate {
      * @param {string} event - The name of the event to emit.
      * @param {*} data - The data to pass to each callback function.
      */
-    emit(event, data) {
+    emit(event: string, data?: any): void {
         if (!this.subscribers[event]) return;
 
         this.subscribers[event].forEach((subscriber) => {

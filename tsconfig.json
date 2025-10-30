@@ -1,15 +1,26 @@
 {
   "compilerOptions": {
-    "target": "es6",
-    "lib": ["dom", "es6"],
-    "types": ["chrome"],
-    "allowJs": true,
-    "checkJs": true,
-    "jsx": "react", // optional, if you're using JSX
-    "module": "esnext",
-    "moduleResolution": "node"
-  },
-  "include": ["**/*.js"],
-  "exclude": ["node_modules"]
-}
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+  "types": ["vite/client", "chrome"],
+    "skipLibCheck": true,
 
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": ["src"]
+}

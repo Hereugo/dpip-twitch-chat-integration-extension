@@ -6,31 +6,31 @@ export default class IRCMessage {
      * The IRC command (e.g., PRIVMSG, JOIN).
      * @type {string}
      */
-    command = '';
+    command: string = '';
 
     /**
      * The prefix of the message, typically including nickname, user, and host.
      * @type {{nickname?: string, user?: string, host?: string}}
      */
-    prefix = {};
+    prefix: { nickname?: string; user?: string; host?: string } = {};
 
     /**
      * The parsed IRCv3 tags with unescaped values.
      * @type {Object.<string, string>}
      */
-    tags = {};
+    tags: Record<string, string> = {};
 
     /**
      * The raw IRCv3 tags as received (before unescaping).
      * @type {Object.<string, string>}
      */
-    rawTags = {};
+    rawTags: Record<string, string> = {};
 
     /**
      * The message parameters, such as channel name and message text.
      * @type {string[]}
      */
-    params = [];
+    params: string[] = [];
 
     /**
      * Unescapes IRCv3 tag values by converting escape sequences to characters.
@@ -39,8 +39,8 @@ export default class IRCMessage {
      * @param {string} str - The string to unescape.
      * @returns {string} - The unescaped string.
      */
-    static _unescapeIRC(str) {
-        const esc2unesc = {
+    static _unescapeIRC(str: string) {
+        const esc2unesc: Record<string, string> = {
             '\\:': ';',
             '\\s': ' ',
             '\\\\': '\\',
@@ -59,7 +59,7 @@ export default class IRCMessage {
      * @param {string} [rawValue=''] - The raw (escaped) tag value.
      * @returns {{unescapedKey: string, unescapedValue: string}} - The unescaped key-value pair.
      */
-    static _parseTag(rawKey, rawValue = '') {
+    static _parseTag(rawKey: string, rawValue: string = '') {
         const unescapedKey = IRCMessage._unescapeIRC(rawKey);
         const unescapedValue = IRCMessage._unescapeIRC(rawValue);
         return { unescapedKey, unescapedValue };
@@ -71,11 +71,11 @@ export default class IRCMessage {
      * @param {string} message - The raw IRC message to parse.
      * @returns {IRCMessage} - The parsed IRCMessage instance.
      */
-    static parse(message) {
+    static parse(message: string) {
         let newIRCMessage = new IRCMessage();
         let offset = 0;
 
-        const currentChar = (c, start = offset) => message[start] === c;
+        const currentChar = (c: string, start = offset) => message[start] === c;
         const getNextSpace = () => {
             let index = message.indexOf(' ', offset);
             return index === -1 ? message.length : index;
@@ -103,16 +103,16 @@ export default class IRCMessage {
         if (currentChar(':')) {
             const prefixEnd = getNextSpace();
             const prefixRaw = message.slice(offset + 1, prefixEnd);
-            let nickname, user, host;
+            let nickname: string | undefined, user: string | undefined, host: string | undefined;
 
             if (prefixRaw.includes('!')) {
-                let userHost;
+                let userHost: string;
                 [nickname, userHost] = prefixRaw.split('!');
                 [user, host] = userHost.includes('@')
-                    ? userHost.split('@')
+                    ? (userHost.split('@') as [string, string])
                     : [userHost, undefined];
             } else if (prefixRaw.includes('@')) {
-                [user, host] = prefixRaw.split('@');
+                [user, host] = prefixRaw.split('@') as [string, string];
             } else {
                 host = prefixRaw;
             }
@@ -164,7 +164,7 @@ export default class IRCMessage {
      * @param {{command: string, prefix: Object, tags: Object, rawTags: Object, params: string[]}} json - The JSON object representing the IRC message.
      * @returns {IRCMessage} - The reconstructed IRCMessage instance.
      */
-    static fromJSON(json) {
+    static fromJSON(json: { command: string; prefix?: any; tags?: Record<string, string>; rawTags?: Record<string, string>; params?: string[] }) {
         const message = new IRCMessage();
         message.command = json.command;
         message.prefix = json.prefix || {};

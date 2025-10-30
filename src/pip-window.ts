@@ -1,10 +1,21 @@
-import { findLargestPlayingVideo, PublishSubscribeTemplate } from './utils-esm';
+import {
+    findLargestPlayingVideo,
+    PublishSubscribeTemplate,
+} from './lib/utils-esm';
+import IRCMessage from './irc-message';
+
+// Some Web APIs used here are experimental in types; declare them loosely for now
+declare const documentPictureInPicture: any;
 
 export class PIPWindowManager extends PublishSubscribeTemplate {
-    mediaSession = navigator.mediaSession;
+    mediaSession: any = (navigator as any).mediaSession;
 
-    pipWindow = null;
-    videoElement = null;
+    pipWindow: Window | null = null;
+    videoElement: HTMLVideoElement | null = null;
+    originalParent: HTMLElement | null = null;
+    wrapper: HTMLElement | null = null;
+    container: HTMLElement | null = null;
+    chat: HTMLElement | null = null;
 
     options = {
         width: 480,
@@ -21,7 +32,7 @@ export class PIPWindowManager extends PublishSubscribeTemplate {
         super();
 
         this.mediaSession.setActionHandler(
-            'enterpictureinpicture',
+            'enterpictureinpicture' as any,
             this.onEnterPIP.bind(this)
         );
     }
@@ -30,39 +41,47 @@ export class PIPWindowManager extends PublishSubscribeTemplate {
      *
      */
     async onEnterPIP() {
-        this.videoElement = findLargestPlayingVideo();
+        this.videoElement = findLargestPlayingVideo() ?? null;
         if (!this.videoElement) {
             return;
         }
 
-        this.originalParent = this.videoElement.parentNode;
+        this.originalParent = this.videoElement!.parentElement;
 
         this.pipWindow = await documentPictureInPicture.requestWindow(
             this.options
         );
 
-        this.pipWindow.document.body.insertAdjacentHTML(
+        this.pipWindow!.document.body.insertAdjacentHTML(
             'afterbegin',
             PIP_WINDOW_HTML
         );
-        this.wrapper = this.pipWindow.document.querySelector('.dpip__wrapper');
-        this.container =
-            this.pipWindow.document.getElementById('dpip__container');
-        this.chat = this.pipWindow.document.getElementById('dpip__chat');
+        this.wrapper = this.pipWindow!.document.querySelector(
+            '.dpip__wrapper'
+        ) as HTMLElement | null;
+        this.container = this.pipWindow!.document.getElementById(
+            'dpip__container'
+        ) as HTMLElement | null;
+        this.chat = this.pipWindow!.document.getElementById(
+            'dpip__chat'
+        ) as HTMLElement | null;
 
-        this.wrapper
-            .querySelector('.dpip__video_container')
-            .prepend(this.videoElement);
+        this.wrapper!.querySelector('.dpip__video_container')?.prepend(
+            this.videoElement!
+        );
 
         this.copyAllStylesheets();
 
-        this.videoElement.addEventListener(
+        this.videoElement!.addEventListener(
             'loadedmetadata',
             this.updateLayout.bind(this)
         );
-        this.pipWindow.addEventListener('resize', this.updateLayout.bind(this));
+        this.pipWindow!.addEventListener(
+            'resize',
+            this.updateLayout.bind(this)
+        );
 
-        this.emit('enterpictureinpicture');
+        this.emit('enterpictureinpicture', undefined);
     }
 
     copyAllStylesheets() {
@@ -75,15 +94,15 @@ export class PIPWindowManager extends PublishSubscribeTemplate {
                 const style = document.createElement('style');
 
                 style.textContent = cssRules;
-                this.pipWindow.document.head.appendChild(style);
+                this.pipWindow!.document.head.appendChild(style);
             } catch (e) {
                 const link = document.createElement('link');
 
                 link.rel = 'stylesheet';
-                link.type = styleSheet.type;
-                link.media = styleSheet.media;
-                link.href = styleSheet.href;
-                this.pipWindow.document.head.appendChild(link);
+                link.type = styleSheet.type as string;
+                link.media = String(styleSheet.media);
+                link.href = styleSheet.href || '';
+                this.pipWindow!.document.head.appendChild(link);
             }
         });
     }
@@ -92,10 +111,10 @@ export class PIPWindowManager extends PublishSubscribeTemplate {
      * dynamically determine and adjust video size based on current window size.
      */
     updateLayout() {
-        const windowWidth = this.pipWindow.innerWidth;
-        const windowHeight = this.pipWindow.innerHeight;
+        const windowWidth = this.pipWindow!.innerWidth;
+        const windowHeight = this.pipWindow!.innerHeight;
         const videoAspect =
-            this.videoElement.videoWidth / this.videoElement.videoHeight;
+            this.videoElement!.videoWidth / this.videoElement!.videoHeight;
 
         const windowAspect = windowWidth / windowHeight;
 
@@ -105,23 +124,23 @@ export class PIPWindowManager extends PublishSubscribeTemplate {
             // Fit by height
             videoHeight = windowHeight;
             videoWidth = videoHeight * videoAspect;
-            this.wrapper.style.flexDirection = 'row';
+            this.wrapper!.style.flexDirection = 'row';
             const leftoverWidth = windowWidth - videoWidth;
             if (leftoverWidth < this.MIN_SPACE) {
-                this.container.style.display = 'none';
+                if (this.container) this.container.style.display = 'none';
             } else {
-                this.container.style.display = 'flex';
+                if (this.container) this.container.style.display = 'flex';
             }
         } else {
             // Fit by width
             videoWidth = windowWidth;
             videoHeight = videoWidth / videoAspect;
-            this.wrapper.style.flexDirection = 'column';
+            this.wrapper!.style.flexDirection = 'column';
             const leftoverHeight = windowHeight - videoHeight;
             if (leftoverHeight < this.MIN_SPACE) {
-                this.container.style.display = 'none';
+                if (this.container) this.container.style.display = 'none';
             } else {
-                this.container.style.display = 'flex';
+                if (this.container) this.container.style.display = 'flex';
             }
         }
     }
@@ -130,29 +149,34 @@ export class PIPWindowManager extends PublishSubscribeTemplate {
      * create a new element when an ircMessage has arrived.
      * @param {IRCMessage} ircMessage
      */
-    addMessage(ircMessage) {
-        const template = this.pipWindow.document.getElementById(
+    addMessage(ircMessage: IRCMessage) {
+        const template = this.pipWindow!.document.getElementById(
             'dpip__message_template'
-        );
-        const clone = template.content.cloneNode(true);
+        ) as HTMLTemplateElement;
+        const clone = template.content.cloneNode(true) as DocumentFragment;
 
-        clone.querySelector('.dpip__message_username').textContent =
-            ircMessage.tags['display-name'];
-        clone.querySelector('.dpip__message_body').textContent =
-            ircMessage.params[1];
-        clone.querySelector('.dpip__message_timestamp').textContent =
-            new Date().toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false,
-            });
+        (
+            clone.querySelector('.dpip__message_username') as HTMLElement
+        ).textContent = ircMessage.tags['display-name'];
+        (
+            clone.querySelector('.dpip__message_body') as HTMLElement
+        ).textContent = ircMessage.params[1];
 
-        clone.querySelector('.dpip__message_username').style.color =
-            ircMessage.tags['color'];
+        // (
+        //     clone.querySelector('.dpip__message_timestamp') as HTMLElement
+        // ).textContent = new Date().toLocaleTimeString([], {
+        //     hour: '2-digit',
+        //     minute: '2-digit',
+        //     hour12: false,
+        // });
 
-        this.chat.appendChild(clone);
+        (
+            clone.querySelector('.dpip__message_username') as HTMLElement
+        ).style.color = ircMessage.tags['color'];
 
-        this.chat.scrollTop = this.chat.scrollHeight;
+        this.chat!.appendChild(clone);
+
+        if (this.chat) this.chat.scrollTop = this.chat.scrollHeight;
     }
 }
 
@@ -385,10 +409,6 @@ const PIP_WINDOW_HTML = `
         <div id="dpip__container" class="dpip__container">
             <!-- Your content here -->
             <div id="dpip__chat" class="dpip__chat"></div>
-            <div id="dpip__input" class="dpip__input">
-                <textarea id="dpip__textinput" placeholder="Send a message"></textarea>
-                <button id="dpip__sendbutton">Chat</button>
-            </div>
         </div>
     </div>
 `;

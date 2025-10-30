@@ -1,18 +1,19 @@
-import { PublishSubscribeTemplate, getHashParams } from './utils-esm.js';
-import IRCMessage from './ircMessage.js';
-import Logger from './logger.js';
-/** @typedef {import('./types.js').CommandType} CommandType */
-/** @typedef {import('./types.js').Message} Message */
+import { PublishSubscribeTemplate, getHashParams } from './lib/utils-esm';
+import IRCMessage from './irc-message';
+import Logger from './lib/logger';
 
 class WorkerInterfacer extends PublishSubscribeTemplate {
-    /** @type {WebSocket} */
-    socket = null;
+    /** WebSocket connection to Twitch IRC */
+    socket: WebSocket | null = null;
     clientId = 'znac5nmb20lcql1osiepyv43yuibo2';
     redirectUri = chrome.identity.getRedirectURL('twitch');
     scope = 'chat:read';
 
-    /** @type {chrome.runtime.Port} */
-    chromePort = null;
+    /** Chrome runtime port to content script */
+    chromePort: chrome.runtime.Port | null = null;
+
+    /** Current channel name */
+    channel!: string;
 
     isChromeConnected = false;
     isTwitchConnected = false;
@@ -28,7 +29,7 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
     /**
      * @param {chrome.runtime.Port} port [description]
      */
-    onChromeConnect(port) {
+    onChromeConnect(port: chrome.runtime.Port) {
         console.assert(
             port.name === 'content-client',
             `expected "client-content" port name but received "${port.name}"`
@@ -39,7 +40,7 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
             this.logger.warn(
                 'Only one connection per chrome client is allowed, disconnecting from previous'
             );
-            this.chromePort.disconnect();
+            this.chromePort?.disconnect();
 
             // but it doesn't get called therefore I'll do this.
             this.onChromeDisconnect(null);
@@ -60,7 +61,7 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
     /**
      * @param {chrome.runtime.Port} e
      */
-    onChromeDisconnect(e) {
+    onChromeDisconnect(_e: chrome.runtime.Port | null) {
         this.isChromeConnected = false;
         this.chromePort = null;
 
@@ -76,10 +77,10 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
     /**
      * @param {Message} message
      */
-    onChromeMessage(message) {
+    onChromeMessage(message: any) {
         this.logger.log(`Received chrome command: ${message.command}`);
 
-        this.emit(message.command);
+        this.emit(message.command, message);
         switch (message.command) {
             case 'CSYN':
                 return this.handleChromeCSYN(message);
@@ -94,8 +95,8 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
      * @param {CommandType} command [description]
      * @param {Object} payload [description]
      */
-    async postChromeMessage(command, payload) {
-        this.chromePort.postMessage({
+    async postChromeMessage(command: string, payload?: unknown) {
+        this.chromePort?.postMessage({
             command: command,
             payload: payload,
         });
@@ -104,7 +105,7 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
     /**
      * @param {Message} message
      */
-    handleChromeCSYN(message) {
+    handleChromeCSYN(message: any) {
         // console.assert(
         //     this.socket === null || this.socket.readyState === WebSocket.CLOSED,
         //     'Expected socket to twitch to be empty, but something is still open'
@@ -142,7 +143,7 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
      *
      * @param{Message} message
      */
-    handleChromeCFIN(message) {
+    handleChromeCFIN(_message: any) {
         this.postChromeMessage('CFIN');
     }
 
@@ -151,7 +152,7 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
      *
      * @param{Message} message
      */
-    handleTFIN(message) {
+    handleTFIN(_message: any) {
         console.assert(
             this.socket != null && this.socket.readyState === WebSocket.OPEN,
             'Expected socket to be open, but the socket is either not there or already closed'
@@ -186,7 +187,7 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
     /**
      * @param {IRCMessage} ircMessage [description]
      */
-    twitchConnectedCallback(ircMessage) {
+    twitchConnectedCallback(_ircMessage: IRCMessage) {
         this.isTwitchConnected = true;
         this.logger.info('Twitch connected!');
 
@@ -194,7 +195,7 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
 
         // Forward all chat messages to chrome client
         this.logger.info('Starting to forward all PRIVMSG to chrome client');
-        this.subscribe('PRIVMSG', (irc) =>
+        this.subscribe('PRIVMSG', (irc: IRCMessage) =>
             this.postChromeMessage('TIRC', irc.toJSON())
         );
 
@@ -225,18 +226,20 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
     /**
      * @param {MessageEvent} e [description]
      */
-    onSocketMessage(e) {
+    onSocketMessage(e: MessageEvent) {
         const delimiter = '\r\n';
-        e.data
+        (e.data as string)
             .trim()
             .split(delimiter)
-            .forEach((line) => this.onIRCMessage(IRCMessage.parse(line)));
+            .forEach((line: string) =>
+                this.onIRCMessage(IRCMessage.parse(line))
+            );
     }
 
     /**
      * @param {CloseEvent} e [description]
      */
-    onSocketClose(e) {
+    onSocketClose(_e: CloseEvent) {
         this.isTwitchConnected = false;
         this.logger.info('Twitch disconnected');
         this.socket = null;
@@ -247,8 +250,8 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
     /**
      * @param {Event} e [description]
      */
-    async onSocketOpen(e) {
-        const responseURL = await this.oauth();
+    async onSocketOpen(_e: Event) {
+        const responseURL = (await this.oauth()) as string;
         const url = new URL(responseURL);
         const responseParams = getHashParams(url.hash);
 
@@ -288,21 +291,21 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
     /**
      * @param {Event} e [description]
      */
-    onSocketError(e) {
+    onSocketError(e: Event) {
         console.error(e);
     }
 
     /**
      * @param {string} message [Send a IRC message to twitch]
      */
-    send(message) {
-        this.socket.send(message);
+    send(message: string) {
+        this.socket?.send(message);
     }
 
     /**
      * @param {IRCMessage} ircMessage
      */
-    onIRCMessage(ircMessage) {
+    onIRCMessage(ircMessage: IRCMessage) {
         this.logger.info(`Received ircMessage command: ${ircMessage.command}`);
 
         this.emit(ircMessage.command, ircMessage);
@@ -335,14 +338,14 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
     /**
      * @param {IRCMessage} ircMessage [description]
      */
-    handlePING(ircMessage) {
+    handlePING(_ircMessage: IRCMessage) {
         this.send(`PONG :tmi.twitch.tv`);
     }
 
     /**
      * @param {IRCMessage} ircMessage [description]
      */
-    async handleNOTICE(ircMessage) {
+    async handleNOTICE(ircMessage: IRCMessage) {
         const msgId = ircMessage.tags['msg-id'];
         if (msgId !== null) {
             this.logger.error(`Error: ${msgId}, ${ircMessage.params[1]}`);
@@ -356,7 +359,7 @@ class WorkerInterfacer extends PublishSubscribeTemplate {
     /**
      * @param {IRCMessage} ircMessage [description]
      */
-    handleRECONNECT(ircMessage) {}
+    handleRECONNECT(_ircMessage: IRCMessage) {}
 
     join() {
         this.logger.info(`Joining channel: ${this.channel}`);

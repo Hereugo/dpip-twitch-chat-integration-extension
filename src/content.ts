@@ -1,10 +1,7 @@
-import { PublishSubscribeTemplate } from './utils-esm.js';
-import IRCMessage from './ircMessage.js';
-import { PIPWindowManager } from './pipWindow.js';
-import Logger from './logger.js';
-
-/** @typedef {import('./types.js').CommandType} CommandType */
-/** @typedef {import('./types.js').Message} Message */
+import { PublishSubscribeTemplate } from './lib/utils-esm';
+import IRCMessage from './irc-message';
+import { PIPWindowManager } from './pip-window';
+import Logger from './lib/logger';
 
 class ContentInterface extends PublishSubscribeTemplate {
     logger = new Logger();
@@ -18,10 +15,9 @@ class ContentInterface extends PublishSubscribeTemplate {
      */
     isTwitchConnected = false;
 
-    /**
-     * @type {PIPWindowManager}
-     */
-    pipWindowManager = null;
+    pipWindowManager: PIPWindowManager;
+
+    chromePort!: chrome.runtime.Port;
 
     constructor() {
         super();
@@ -33,17 +29,20 @@ class ContentInterface extends PublishSubscribeTemplate {
     }
 
     onEnterPIP() {
-        this.pipWindowManager.pipWindow.addEventListener('pagehide', (e) => {
-            this.logger.info(
-                `Closing PIP Window, closing connection with worker and twitch`
-            );
-            this.postChromeMessage('TFIN');
+        this.pipWindowManager.pipWindow!.addEventListener(
+            'pagehide',
+            (_e: PageTransitionEvent) => {
+                this.logger.info(
+                    `Closing PIP Window, closing connection with worker and twitch`
+                );
+                this.postChromeMessage('TFIN');
 
-            // make sure to return original video element back to it's place.
-            this.pipWindowManager.originalParent.prepend(
-                this.pipWindowManager.videoElement
-            );
-        });
+                // make sure to return original video element back to it's place.
+                this.pipWindowManager.originalParent!.prepend(
+                    this.pipWindowManager.videoElement!
+                );
+            }
+        );
 
         this.logger.info(`Entering picture in picture mode`);
         this.connect();
@@ -71,7 +70,7 @@ class ContentInterface extends PublishSubscribeTemplate {
      * @param {CommandType} command [description]
      * @param {Object} payload [description]
      */
-    postChromeMessage(command, payload = {}) {
+    postChromeMessage(command: string, payload: unknown = {}) {
         this.chromePort.postMessage({
             command: command,
             payload: payload,
@@ -82,7 +81,7 @@ class ContentInterface extends PublishSubscribeTemplate {
      * handle on port disconnect
      * @param {chrome.runtime.Port} e [description]
      */
-    onDisconnect(e) {
+    onDisconnect(_e: chrome.runtime.Port | null) {
         this.isChromeConnected = false;
 
         if (chrome.runtime.lastError) {
@@ -98,7 +97,7 @@ class ContentInterface extends PublishSubscribeTemplate {
      * handle on message
      * @param {Message} message [received message from worker]
      */
-    onMessage(message) {
+    onMessage(message: any) {
         this.logger.log(`Received command: ${message.command}`);
 
         this.emit(message.command, message);
@@ -126,7 +125,7 @@ class ContentInterface extends PublishSubscribeTemplate {
      * handle IRC message
      * @param {Message} message [description]
      */
-    handleTCON(message) {
+    handleTCON(_message: any) {
         this.isTwitchConnected = true;
         this.logger.info('Twitch connected!');
     }
@@ -135,7 +134,7 @@ class ContentInterface extends PublishSubscribeTemplate {
      * handle IRC message
      * @param {Message} message [description]
      */
-    handleTFIN(message) {
+    handleTFIN(_message: any) {
         this.isTwitchConnected = false;
         this.logger.info('Twitch disconnected');
 
@@ -147,7 +146,7 @@ class ContentInterface extends PublishSubscribeTemplate {
      * handle IRC message
      * @param {Message} message [description]
      */
-    handleTIRC(message) {
+    handleTIRC(message: any) {
         console.assert(
             this.isTwitchConnected === true,
             'received a IRC message but isTwitchConnected is set to false'
@@ -163,7 +162,7 @@ class ContentInterface extends PublishSubscribeTemplate {
      * handle CACK message response
      * @param {Message} message [description]
      */
-    handleCACK(message) {
+    handleCACK(_message: any) {
         this.isChromeConnected = true;
         this.logger.info('Chrome port connected!');
         this.logger.log('Worker is establishing twitch connection now');
@@ -173,7 +172,7 @@ class ContentInterface extends PublishSubscribeTemplate {
      * handle CFIN message response
      * @param {Message} message [description]
      */
-    handleCFIN(message) {
+    handleCFIN(_message: any) {
         this.chromePort.disconnect();
         // this should have been called by disconnect() method on chromePort,
         // but it doesn't get called therefore I'll do this.
