@@ -24,6 +24,16 @@ export class PIPWindowManager extends PublishSubscribeTemplate {
     };
 
     /**
+     * Controls how many chat messages are retained and for how long.
+     * maxMessages: hard cap on number of messages in the chat DOM
+     * ttlMs: optional time-to-live in milliseconds (0 disables time-based pruning)
+     */
+    messageRetention = {
+        maxMessages: 150,
+        ttlMs: 0,
+    };
+
+    /**
      * Minimum px required for chat container to show
      */
     MIN_SPACE = 200;
@@ -155,6 +165,14 @@ export class PIPWindowManager extends PublishSubscribeTemplate {
         ) as HTMLTemplateElement;
         const clone = template.content.cloneNode(true) as DocumentFragment;
 
+        // Stamp message with a timestamp for optional TTL pruning
+        const rootEl = clone.querySelector(
+            '.dpip__message'
+        ) as HTMLElement | null;
+        if (rootEl) {
+            rootEl.dataset.ts = String(Date.now());
+        }
+
         (
             clone.querySelector('.dpip__message_username') as HTMLElement
         ).textContent = ircMessage.tags['display-name'];
@@ -176,7 +194,71 @@ export class PIPWindowManager extends PublishSubscribeTemplate {
 
         this.chat!.appendChild(clone);
 
+        // Prune old/excess messages and keep scroll pinned to bottom
+        this.pruneChat();
         if (this.chat) this.chat.scrollTop = this.chat.scrollHeight;
+    }
+
+    /**
+     * Remove messages that exceed limits (by TTL and/or max count)
+     */
+    private pruneChat() {
+        if (!this.chat) return;
+
+        // 1) Time-based pruning (if enabled)
+        const ttl = this.messageRetention.ttlMs;
+        if (ttl && ttl > 0) {
+            const now = Date.now();
+            const nodes =
+                this.chat.querySelectorAll<HTMLElement>('.dpip__message');
+            for (const el of nodes) {
+                const tsStr = el.dataset.ts;
+                const ts = tsStr ? parseInt(tsStr, 10) : NaN;
+                if (!Number.isFinite(ts) || now - ts > ttl) {
+                    el.remove();
+                }
+            }
+        }
+
+        // 2) Count-based pruning (always enforced)
+        const max = Math.max(0, this.messageRetention.maxMessages);
+        if (max === 0) {
+            // If set to zero, clear all messages
+            this.chat.innerHTML = '';
+            return;
+        }
+
+        let children = this.chat.querySelectorAll('.dpip__message');
+        const excess = children.length - max;
+        if (excess > 0) {
+            // Remove from the top (oldest first)
+            let removed = 0;
+            while (removed < excess) {
+                const first = this.chat.querySelector('.dpip__message');
+                if (!first) break;
+                first.remove();
+                removed++;
+            }
+        }
+    }
+
+    /**
+     * Allow callers to override message retention settings at runtime
+     */
+    setMessageRetention(
+        options: Partial<{ maxMessages: number; ttlMs: number }>
+    ) {
+        this.messageRetention = { ...this.messageRetention, ...options };
+        // Apply immediately to enforce new limits
+        this.pruneChat();
+    }
+
+    /**
+     * Clear all chat messages
+     */
+    clearChat() {
+        if (!this.chat) return;
+        this.chat.innerHTML = '';
     }
 }
 
